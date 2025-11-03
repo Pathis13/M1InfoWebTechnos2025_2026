@@ -14,6 +14,7 @@ import { loadAndDecodeSound } from './soundutils.js';
 let ctx;
 
 const soundURL =
+<<<<<<< HEAD
     'https://mainline.i3s.unice.fr/mooc/shoot2.mp3';
 
 const soundURLs = [
@@ -28,6 +29,9 @@ const soundURLs = [
    'https://upload.wikimedia.org/wikipedia/commons/transcoded/2/24/Ride.ogg/Ride.ogg.mp3'
 ]
 
+=======
+    'https://mainline.i3s.unice.fr/WAMSampler2/audio/808/Maracas%20808.wav';
+>>>>>>> e62ff46ed008406c36bb35a7cb2f682b4238fa9b
 let decodedSound;
 let decodedSounds = [];
 
@@ -38,12 +42,25 @@ let canvas, canvasOverlay;
 
 let sounds = []
 let mousePos = { x: 0, y: 0 }
+<<<<<<< HEAD
 // index of the currently active sound (shared between handlers and animate)
 let activeSoundIndex = 0;
 
+=======
+// The button for playing the sound
+let playButton = document.querySelector("#playButton");
+// disable the button until the sound is loaded and decoded
+playButton.disabled = true;
+let debugButton; 
+>>>>>>> e62ff46ed008406c36bb35a7cb2f682b4238fa9b
 
 window.onload = async function init() {
     ctx = new AudioContext();
+
+     debugButton = document.querySelector("#debug");
+     debugButton.onclick = function(evt) {
+        waveformDrawer.drawWave(0, canvas.height);
+     };
 
     // two canvas : one for drawing the waveform, the other for the trim bars
     canvas = document.querySelector("#myCanvas");

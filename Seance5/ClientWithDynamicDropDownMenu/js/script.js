@@ -11,6 +11,7 @@ const URI_endpoint = "http://localhost:3000/api/presets";
 
 
 async function getData() {
+  try {
   // fetch is asynchronous, it returns a Promise
   const response = await fetch(URI_endpoint);
   // this line will be executed only when 
@@ -19,12 +20,19 @@ async function getData() {
   presets = await response.json();
 
   // now we can build the preset menu
+<<<<<<< HEAD
   // buildPresetMenu();
+=======
+  //buildPresetMenu();
+>>>>>>> e62ff46ed008406c36bb35a7cb2f682b4238fa9b
   buildPresetMenuWithGroups();
 
   // More advanced version with "optgroup" HTML elements for categories
   // This is optional, but dropdown menu looks better with groups
   //buildPresetMenuWithGroups();
+  } catch (error) {
+    document.body.innerHTML += "<p>Error fetching presets from server: " + error + "</p>";
+  }
 }
 
 function buildPresetMenu() {
@@ -71,6 +79,18 @@ function buildPresetMenuWithGroups() {
   presetMenu.appendChild(firstOption);
 
   // Now, create a group for each category
+  // explain [category, items] of Object.entries(categories)
+  // category is the key (category name)
+  // items is the array of presets in this category
+  // this notation is called destructuring assignment
+  // Object.entries(categories) returns an array of [key, value] pairs
+  // here is a super simple example of destructuring assignment
+  /*
+  const obj = { a: 1, b: 2 };
+  for (const [key, value] of Object.entries(obj)) {
+    console.log(key, value);
+  }
+  */
   for (const [category, items] of Object.entries(categories)) {
     const optgroup = document.createElement("optgroup");
     optgroup.label = category;
