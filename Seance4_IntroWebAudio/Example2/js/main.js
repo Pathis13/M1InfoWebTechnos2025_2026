@@ -6,9 +6,9 @@
 // default imports of classes from waveformdrawer.js and trimbarsdrawer.js
 import WaveformDrawer from './waveformdrawer.js';
 import TrimbarsDrawer from './trimbarsdrawer.js';
+import Sound from './sound.js';
 // "named" imports from utils.js and soundutils.js
-import { loadAndDecodeSound, playSound } from './soundutils.js';
-import { pixelToSeconds } from './utils.js';
+import { loadAndDecodeSound } from './soundutils.js';
 
 // The AudioContext object is the main "entry point" into the Web Audio API
 let ctx;
@@ -36,12 +36,11 @@ let canvas, canvasOverlay;
 // waveform drawer is for drawing the waveform in the canvas
 // trimbars drawer is for drawing the trim bars in the overlay canvas
 
-let waveformDrawer, trimbarsDrawer;
+let sounds = []
 let mousePos = { x: 0, y: 0 }
-// The button for playing the sound
-let playButton = document.querySelector("#playButton");
-// disable the button until the sound is loaded and decoded
-playButton.disabled = true;
+// index of the currently active sound (shared between handlers and animate)
+let activeSoundIndex = 0;
+
 
 window.onload = async function init() {
     ctx = new AudioContext();
@@ -52,9 +51,7 @@ window.onload = async function init() {
     canvasOverlay = document.querySelector("#myCanvasOverlay");
 
     // create the waveform drawer and the trimbars drawer
-    waveformDrawer = new WaveformDrawer();
-    trimbarsDrawer = new TrimbarsDrawer(canvasOverlay, 100, 200);
-
+    
     // load and decode the sound
     // this is asynchronous, we use await to wait for the end of the loading and decoding
     // before going to the next instruction
@@ -64,46 +61,37 @@ window.onload = async function init() {
 
     let promises = soundURLs.map(url => loadAndDecodeSound(url, ctx));
     decodedSounds = await Promise.all(promises);
-
+    
     let buttonsContainer = document.querySelector("#buttons");
-
-
+    
+    
     decodedSounds.forEach((element, index) => {
+        // create dedicated waveform and trimbars for this sound
+        const wf = new WaveformDrawer();
+        const tb = new TrimbarsDrawer(canvasOverlay, 100, 200);
+        const sound = new Sound(wf, tb, element, canvas);
+        // initialize its waveform
+        sound.init('#83E83E');
+        sounds.push(sound);
+
+        // button to activate and play this sound
         let button = document.createElement("button");
-        button.id = "playButton"
+        button.class = "playButton"
         button.textContent = `Play sound ${index + 1}`;
         buttonsContainer.appendChild(button);
         button.onclick = function() {
-            let start = pixelToSeconds(trimbarsDrawer.leftTrimBar.x, decodedSound.duration, canvas.width);
-            let end = pixelToSeconds(trimbarsDrawer.rightTrimBar.x, decodedSound.duration, canvas.width);
-            console.log("start: " + start + " end: " + end);
-            // from utils.js
-            playSound(ctx, decodedSound, start, end);
-            // playSound(ctx, element, 0, element.duration);
+            // set active sound to this index
+            activeSoundIndex = index;
+            // play the active sound
+            sounds[activeSoundIndex].play(ctx);
+            // redraw waveform for the selected sound
             context.clearRect(0, 0, canvas.width, canvas.height);
-            waveformDrawer.init(element, canvas, '#83E83E');
-            waveformDrawer.drawWave(0, canvas.height);
+            sounds[activeSoundIndex].waveForm.drawWave(0, canvas.height);
         };
         button.disabled = false;
     });
-
-
-    // waveformDrawer.init(decodedSound, canvas, '#83E83E');
-    // waveformDrawer.drawWave(0, canvas.height);
-
-    // we enable the play sound button, now that the sound is loaded and decoded
-    playButton.disabled = false;
-
-    // Event listener for the button. When the button is pressed, we play the sound
-    playButton.onclick = function (evt) {
-        // get start and end time (in seconds) from trim bars position.x (in pixels)
-        let start = pixelToSeconds(trimbarsDrawer.leftTrimBar.x, decodedSound.duration, canvas.width);
-        let end = pixelToSeconds(trimbarsDrawer.rightTrimBar.x, decodedSound.duration, canvas.width);
-        console.log("start: " + start + " end: " + end);
-        // from utils.js
-        playSound(ctx, decodedSound, start, end);
-    };
-
+    // activeSoundIndex is declared at module scope; default already 0
+    console.log(sounds[0])
 
     // declare mouse event listeners for ajusting the trim bars
     // when the mouse moves, we check if we are close to a trim bar
@@ -120,17 +108,21 @@ window.onload = async function init() {
 
         // When the mouse moves, we check if we are close to a trim bar
         // if so: move it!
-        trimbarsDrawer.moveTrimBars(mousePos);
+        // operate on the active sound's trimbars if available
+        if (sounds[activeSoundIndex] && sounds[activeSoundIndex].trimBars)
+            sounds[activeSoundIndex].trimBars.moveTrimBars(mousePos);
     }
 
     canvasOverlay.onmousedown = (evt) => {
         // If a trim bar is close to the mouse position, we start dragging it
-        trimbarsDrawer.startDrag();
+        if (sounds[activeSoundIndex] && sounds[activeSoundIndex].trimBars)
+            sounds[activeSoundIndex].trimBars.startDrag();
     }
 
     canvasOverlay.onmouseup = (evt) => {
         // We stop dragging the trim bars (if they were being dragged)
-        trimbarsDrawer.stopDrag();
+        if (sounds[activeSoundIndex] && sounds[activeSoundIndex].trimBars)
+            sounds[activeSoundIndex].trimBars.stopDrag();
     }
 
     // start the animation loop for drawing the trim bars
@@ -143,10 +135,11 @@ window.onload = async function init() {
 // see https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
 function animate() {
     // clear overlay canvas;
-    trimbarsDrawer.clear();
-
-    // draw the trim bars
-    trimbarsDrawer.draw();
+    // clear overlay and draw the active sound's trim bars
+    if (sounds[activeSoundIndex] && sounds[activeSoundIndex].trimBars) {
+        sounds[activeSoundIndex].trimBars.clear();
+        sounds[activeSoundIndex].trimBars.draw();
+    }
 
     // redraw in 1/60th of a second
     requestAnimationFrame(animate);

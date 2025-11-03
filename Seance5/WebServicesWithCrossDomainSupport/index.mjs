@@ -2,6 +2,7 @@ import express from "express";
 import fs from "node:fs/promises";
 import path from "path";
 import { fileURLToPath } from "node:url";
+import cors from "cors"
 
 const app = express();
 
@@ -30,6 +31,8 @@ export const DATA_DIR = process.env.DATA_DIR
 
 // We tell express to use the public folder for static files
 app.use(express.static(PUBLIC_DIR));
+
+app.use(cors())
 
 // let's define a route for the preset files
 app.get("/api/presets", async (req, res) => {

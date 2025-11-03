@@ -19,7 +19,8 @@ async function getData() {
   presets = await response.json();
 
   // now we can build the preset menu
-  buildPresetMenu();
+  // buildPresetMenu();
+  buildPresetMenuWithGroups();
 
   // More advanced version with "optgroup" HTML elements for categories
   // This is optional, but dropdown menu looks better with groups
